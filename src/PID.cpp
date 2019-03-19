@@ -67,6 +67,7 @@ void PID::twiddleIfNecessary(double cte) {
     }
     else {
         err /= STEPS_PER_CYCLE;
+        //Try to twiddle the coeffs when the ave. error is > MAX_ALLOWED_CTE
         if (err > MAX_ALLOWED_CTE) {
             if (goto_label == "STEP_1")
                 goto STEP_1;
@@ -75,6 +76,7 @@ void PID::twiddleIfNecessary(double cte) {
             if (goto_label == "STEP_3")
                 goto STEP_3;
 
+            //obtain best_error (1st cycle)
             best_err = err;
             idx = 0;
             goto_label = "STEP_1";
@@ -83,6 +85,7 @@ void PID::twiddleIfNecessary(double cte) {
             STEP_1:
             std::cout << "TWIDDLE_1" << std::endl;
             //std::cout << "idx: "<< idx << ", STEP_1 err: " << err << ", " << best_err << std::endl;
+            //try to add twiddle to the currently adjusted coeff (2nd cycle)
             p[idx] += dp[idx];
             goto_label = "STEP_2";
             return;
@@ -90,6 +93,9 @@ void PID::twiddleIfNecessary(double cte) {
             STEP_2:
             std::cout << "TWIDDLE_2" << std::endl;
             //std::cout << "idx: "<< idx << ", STEP_2 err: " << err << ", " << best_err <<", i_err: " << i_error << std::endl;
+
+            // if 1st cycle did not decrease the error, try to subtract twiddle
+            // from the currently adjusted coeff (3rd cycle)
             if (err < best_err) {
                 best_err = err;
                 dp[idx] *= 1.1;
@@ -102,6 +108,9 @@ void PID::twiddleIfNecessary(double cte) {
                 STEP_3:
                 std::cout << "TWIDDLE_3" << std::endl;
                 //std::cout << "idx: "<< idx << ", STEP_3 err: " << err << ", " << best_err << std::endl;
+
+                // if 2nd cycle did not decrease the error, try to subtract twiddle
+                // from the currently adjusted coeff (4th cycle)
                 if (err < best_err) {
                     best_err = err;
                     dp[idx] *= 1.1;
